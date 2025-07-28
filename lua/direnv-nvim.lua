@@ -7,14 +7,11 @@ local augroup = vim.api.nvim_create_augroup("direnv-nvim", {
 
 local get_cwd = function()
 	if OPTS.type == "buffer" then
-		local buf = vim.api.nvim_buf_get_name(0)
-		if vim.fn.filereadable(buf) == 1 then
-			return vim.fs.dirname(buf)
-		else
-			return nil
-		end
+		return OPTS.buffer_setup.get_cwd()
 	elseif OPTS.type == "dir" then
-		return vim.loop.cwd()
+		return OPTS.dir_setup.get_cwd()
+	elseif OPTS.type == "custom" then
+		return OPTS.custom_setup.get_cwd()
 	end
 end
 
@@ -149,6 +146,15 @@ local setup_buffer = function()
 	})
 end
 
+local setup_custom = function()
+	vim.api.nvim_create_autocmd(OPTS.custom_setup.autocmd_event, {
+		pattern = OPTS.custom_setup.autocmd_pattern,
+		callback = function()
+			M.hook()
+		end,
+	})
+end
+
 local function _has_filetype(filetypes, ft)
 	if not type(filetypes) == "table" then
 		return false
@@ -169,6 +175,9 @@ M.setup = function(opts)
 	end
 	if OPTS.type == "dir" then
 		setup_dir()
+	end
+	if OPTS.type == "custom" then
+		setup_custom()
 	end
 	if OPTS.on_direnv_finished ~= nil then
 		local au_opts = OPTS.on_direnv_finished_opts
